@@ -2,6 +2,7 @@
 #include<iostream>
 #include<vector>
 #include<string>
+#include<fstream>
 
 
 
@@ -297,8 +298,80 @@ void System::findEmployeeCount() const
 	cout << "当前在职员工数量: " << count << "人";
 }
 
+//保存文件
+void System::saveToFile() {
+	ofstream ofs(dataFile);
+	if (!ofs.is_open())
+	{
+		cout << "路径有问题，无法打开" << endl;
+		return;
 
-void System::saveToFile()
-{
-
+	}
+	for (auto e:m_vEmployees)
+	{
+		if (e)
+		{
+			ofs << e->getId() << "	" 
+				<< e->getName() << "	" 
+				<< e->getAge() << "		" 
+				<< e->getPost() << endl;
+			if (e->getPost() == SALESMAN || e->getPost() == SALESMANAGER)
+			{
+				ofs << static_cast<Salesman*>(e)->getSales() << endl;
+			}
+			else {
+				ofs << "  " << endl;
+			}
+			ofs << e->getState() << endl;
+		}
+	}
+	ofs.close();	
+	cout << "保存成功" << endl;
 }
+
+
+
+//读取文件
+
+void System::loadFromFile() {
+	ifstream ifs(dataFile);
+	if (!ifs.is_open()) {
+		cout << "未找到员工信息文件，或文件打开失败。" << endl;
+		return;
+	}
+
+	// 清空原有数据
+	for (auto e : m_vEmployees) {
+		delete e;
+	}
+	m_vEmployees.clear();
+
+	int post, id, age, sales;
+	string name;
+	bool state;
+
+	while (ifs >> post >> id >> name >> age >> sales >> state) {
+		Employee* e = nullptr;
+		switch (post) {
+		case SALESMAN:
+			e = new Salesman(id, name, age, static_cast<Post>(post), sales);
+			break;
+		case SALESMANAGER:
+			e = new SalesManager(id, name, age, static_cast<Post>(post), sales);
+			break;
+		case MANAGER:
+			e = new Manager(id, name, age, static_cast<Post>(post));
+			break;
+		default:
+			cout << "无效岗位数据，跳过该条记录。" << endl;
+			continue;
+		}
+		e->setState(state);
+		m_vEmployees.push_back(e);
+	}
+
+	ifs.close();
+	cout << "员工信息加载完成。" << endl;
+}
+
+
